@@ -32,3 +32,4 @@ The purpose of this portfolio is to demonstrate my technical skills, analytical 
 ```Here it is the list of the most prominent projects.
 01-stressBot/           → StressBot: A Fuzzy Expert System for Stress Assessment
 02-chessOpenings/       → ChessOpenings: Pattern Discovery and Clustering in Chess Openings
+03-vaccinationCoverage/ → Case Study: DTP3 Vaccination Coverage (2020–2024) – Global Public Health
