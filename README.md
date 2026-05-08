@@ -27,7 +27,7 @@ The purpose of this portfolio is to demonstrate my technical skills, analytical 
 
 ---
 
-## 🗂 Repository Structure
+## Repository Structure
 
 ```Here it is the list of the most prominent projects.
 01-stressBot/           → StressBot: A Fuzzy Expert System for Stress Assessment
