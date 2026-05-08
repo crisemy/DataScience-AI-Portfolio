@@ -78,7 +78,6 @@ streamlit run app.py
 - Permite priorizar módulos de alto riesgo en campañas de testing.
 - Baseline interpretable y listo para producción.
 
-
 Autor: Cris N.- QA Architect
 Materia: Machine Learning y Deep Learning
 Fecha: Mayo 2026
