@@ -20,7 +20,7 @@ def get_img_with_href(local_img_path):
     binary_data = get_base64_of_bin_file(local_img_path)
     return f'data:image/{img_format};base64,{binary_data}'
 
-# Custom CSS for Premium Look
+# Custom CSS
 hero_img_base64 = ""
 if os.path.exists("assets/hero.png"):
     hero_img_base64 = get_img_with_href("assets/hero.png")
@@ -222,7 +222,7 @@ elif page == "Predicción por Lotes (CSV)":
                 'INT_FAN_IN', 'INT_FAN_OUT', 'NUM_OPERATORS', 'NUM_OPERANDS', 'BRANCH_COUNT'
             ]
             
-            # Verificar si las columnas existen (ignorando mayúsculas/minúsculas si es necesario, pero aquí usamos exactas)
+            # Verificar si las columnas existen (ignorando mayúsculas/minúsculas si es necesario)
             if all(col in df.columns for col in feature_cols):
                 X = df[feature_cols]
                 X_scaled = scaler.transform(X)
