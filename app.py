@@ -8,7 +8,7 @@ import os
 import base64
 
 # Configuration
-st.set_page_config(page_title="QA-Cortex | Defect Predictor", layout="wide", page_icon="🛠️")
+st.set_page_config(page_title="QA-Cortex | Defect Predictor", layout="wide", page_icon="")
 
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
@@ -108,7 +108,7 @@ st.markdown(f"""
     </style>
     
     <div class="header-banner">
-        <h1>🛠️ QA-CORTEX</h1>
+        <h1>QA-CORTEX</h1>
         <p>Inteligencia Artificial para el Control de Calidad de Software</p>
     </div>
     """, unsafe_allow_html=True)
@@ -131,7 +131,7 @@ with st.sidebar:
     st.header("Navegación")
     page = st.selectbox("Ir a", ["Inicio", "Predicción Individual", "Predicción por Lotes (CSV)", "Análisis del Modelo"])
     st.markdown("---")
-    st.info("🚀 **QA-Cortex v1.0**\n\nUnidad 1 - Machine Learning\nMaestría en Ciencia de Datos e IA")
+    st.info("**QA-Cortex v1.0**\n\nUnidad 1 - Machine Learning\nMaestría en Ciencia de Datos e IA")
 
 if page == "Inicio":
     st.write("""
@@ -153,7 +153,7 @@ if page == "Inicio":
     col3.metric("Módulos Analizados", "10,000+", "Dataset NASA")
 
 elif page == "Predicción Individual":
-    st.header("🔍 Análisis de Módulo Individual")
+    st.header("Análisis de Módulo Individual")
     
     with st.container():
         st.write("Ingrese las métricas técnicas del módulo para obtener un diagnóstico basado en IA.")
@@ -173,7 +173,7 @@ elif page == "Predicción Individual":
             num_opnds = st.number_input("Number of Operands (NUM_OPERANDS)", min_value=0.0, value=10.0, help="Número de operandos")
             branches = st.number_input("Branch Count (BRANCH_COUNT)", min_value=0.0, value=8.0, help="Cantidad de ramas en el código")
 
-    if st.button("🚀 Ejecutar Predicción"):
+    if st.button("Ejecutar Predicción"):
         if model and scaler:
             # Crear DataFrame con los 10 nombres exactos esperados por el scaler
             input_data = pd.DataFrame([[
@@ -191,11 +191,11 @@ elif page == "Predicción Individual":
                 
                 st.markdown("---")
                 if prediction == 1:
-                    st.error(f"### ⚠️ MÓDULO DEFECTUOSO DETECTADO")
+                    st.error(f"### MÓDULO DEFECTUOSO DETECTADO")
                     st.write(f"Existe un **{probability:.1%}** de probabilidad de que este módulo contenga errores críticos.")
                     st.progress(probability)
                 else:
-                    st.success(f"### ✅ MÓDULO LIMPIO")
+                    st.success(f"### MÓDULO LIMPIO")
                     st.write(f"El análisis indica que el módulo es estable (Probabilidad de fallo: **{probability:.1%}**).")
                     st.progress(probability)
             except Exception as e:
@@ -204,7 +204,7 @@ elif page == "Predicción Individual":
             st.warning("Modelo no cargado correctamente.")
 
 elif page == "Predicción por Lotes (CSV)":
-    st.header("📂 Procesamiento por Lotes")
+    st.header("Procesamiento por Lotes")
     st.write("Suba un archivo CSV para analizar múltiples módulos simultáneamente.")
     
     uploaded_file = st.file_uploader("Sube tu archivo CSV con métricas de código", type=["csv"])
@@ -230,7 +230,7 @@ elif page == "Predicción por Lotes (CSV)":
                 predictions = model.predict(X_scaled)
                 probabilities = model.predict_proba(X_scaled)[:, 1]
                 
-                df['Resultado'] = ["⚠️ Defectuoso" if p == 1 else "✅ Limpio" for p in predictions]
+                df['Resultado'] = ["Defectuoso" if p == 1 else "Limpio" for p in predictions]
                 df['Probabilidad'] = [f"{prob:.1%}" for prob in probabilities]
                 
                 st.subheader("Resultados del Análisis")
@@ -238,14 +238,14 @@ elif page == "Predicción por Lotes (CSV)":
                 
                 # Descargar resultados
                 csv = df.to_csv(index=False).encode('utf-8')
-                st.download_button("📥 Descargar Reporte Completo", csv, "reporte_qa_defectos.csv", "text/csv")
+                st.download_button("Descargar Reporte Completo", csv, "reporte_qa_defectos.csv", "text/csv")
             else:
                 missing = [c for col in feature_cols if col not in df.columns]
                 st.error(f"El archivo CSV debe contener las columnas: {feature_cols}. Faltan: {missing}")
 
 
 elif page == "Análisis del Modelo":
-    st.header("📊 Inteligencia del Modelo")
+    st.header("Inteligencia del Modelo")
     
     col1, col2 = st.columns([1, 1])
     
@@ -280,4 +280,4 @@ elif page == "Análisis del Modelo":
         - **v(g)**: Mide la complejidad lógica. Valores altos indican código difícil de testear.
         - **Halstead Metrics**: Analizan la riqueza del vocabulario y dificultad del algoritmo.
         """)
-        st.info("💡 El modelo actual fue entrenado con un ensamble de Random Forest y XGBoost.")
+        st.info("El modelo actual fue entrenado con un ensamble de Random Forest y XGBoost.")
