@@ -32,12 +32,10 @@ Identify frequent move combinations in the first three moves of chess openings a
 pip install pandas numpy seaborn matplotlib scikit-learn mlxtend kagglehub
 ```
 
-## How to run
-
+## How to run it
 Download the dataset from Kaggle or use kagglehub
-Place openings.csv in the working directory (or adjust path)
+Place openings.csv in the working directory (or adjust in the path)
 Run the script top to bottom (preferably in Jupyter/Colab)
 
 ## Author
 Cris N.
-March 2025
