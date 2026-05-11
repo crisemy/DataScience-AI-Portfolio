@@ -1,1 +1,0 @@
-# Se puede utilizar el .ipynb para obtener el data y las visualizaciones
