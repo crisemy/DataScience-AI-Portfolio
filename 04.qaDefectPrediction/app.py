@@ -13,6 +13,7 @@ from sklearn.metrics import (
 )
 
 APP_DIR = Path(__file__).parent
+MODEL_DIR = APP_DIR / 'model'
 
 st.set_page_config(page_title="QA-Cortex | Defect Predictor", layout="wide", page_icon="")
 
@@ -21,15 +22,11 @@ def get_base64_of_bin_file(bin_file):
         data = f.read()
     return base64.b64encode(data).decode()
 
-def get_img_with_href(local_img_path):
-    img_format = local_img_path.split('.')[-1]
-    binary_data = get_base64_of_bin_file(local_img_path)
-    return f'data:image/{img_format};base64,{binary_data}'
-
 hero_img_base64 = ""
 hero_path = APP_DIR / ".." / "assets" / "hero.png"
 if hero_path.exists():
-    hero_img_base64 = get_img_with_href(str(hero_path))
+    with open(hero_path, 'rb') as f:
+        hero_img_base64 = base64.b64encode(f.read()).decode()
 
 st.markdown(f"""
     <style>
@@ -37,7 +34,7 @@ st.markdown(f"""
     html, body, [class*="css"] {{ font-family: 'Outfit', sans-serif; }}
     .main {{ background-color: #0f172a; color: #f8fafc; }}
     .header-banner {{
-        background-image: linear-gradient(rgba(15,23,42,0.7), rgba(15,23,42,0.7)), url("{hero_img_base64}");
+        background-image: linear-gradient(rgba(15,23,42,0.7), rgba(15,23,42,0.7)), url("data:image/png;base64,{hero_img_base64}");
         background-size: cover; background-position: center; height: 180px;
         border-radius: 20px; display: flex; flex-direction: column;
         justify-content: center; align-items: center; margin-bottom: 30px;
@@ -58,35 +55,61 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+MODEL_NAMES = {
+    'logistic_regression': 'Logistic Regression',
+    'random_forest': 'Random Forest',
+    'svm_rbf': 'SVM (RBF)',
+    'xgboost': 'XGBoost',
+    'lightgbm': 'LightGBM'
+}
+
 @st.cache_resource
-def load_model():
+def load_main_model():
     try:
-        model = joblib.load(APP_DIR / 'model' / 'defect_prediction_model.pkl')
-        scaler = joblib.load(APP_DIR / 'model' / 'scaler.pkl')
+        model = joblib.load(MODEL_DIR / 'defect_prediction_model.pkl')
+        scaler = joblib.load(MODEL_DIR / 'scaler.pkl')
         return model, scaler
     except FileNotFoundError:
-        st.error(f"No se encontraron los archivos del modelo en {APP_DIR / 'model/'}")
         return None, None
+
+@st.cache_resource
+def load_all_models():
+    models = {}
+    for key, name in MODEL_NAMES.items():
+        path = MODEL_DIR / f'model_{key}.pkl'
+        if path.exists():
+            models[name] = joblib.load(path)
+    return models
 
 @st.cache_resource
 def load_eval_data():
     try:
-        metrics = joblib.load(APP_DIR / 'model' / 'metrics.pkl')
-        importance = joblib.load(APP_DIR / 'model' / 'feature_importance.pkl')
-        test_data = joblib.load(APP_DIR / 'model' / 'test_data.pkl')
+        metrics = joblib.load(MODEL_DIR / 'metrics.pkl')
+        importance = joblib.load(MODEL_DIR / 'feature_importance.pkl')
+        test_data = joblib.load(MODEL_DIR / 'test_data.pkl')
         return metrics, importance, test_data
     except FileNotFoundError:
         return None, None, None
 
-model, scaler = load_model()
-eval_metrics, feature_imp, test_data = load_eval_data()
+@st.cache_resource
+def load_comparison():
+    path = MODEL_DIR / 'comparison_results.pkl'
+    if path.exists():
+        return pd.DataFrame(joblib.load(path))
+    return None
 
+main_model, scaler = load_main_model()
+all_models = load_all_models()
+eval_metrics, feature_imp, test_data = load_eval_data()
+comparison_df = load_comparison()
+
+PAGES = ["Inicio", "Predicción Individual", "Predicción por Lotes (CSV)", "Comparación de Modelos", "Análisis del Modelo"]
 with st.sidebar:
     st.header("Navegación")
-    page = st.selectbox("Ir a", ["Inicio", "Predicción Individual", "Predicción por Lotes (CSV)", "Análisis del Modelo"])
+    page = st.selectbox("Ir a", PAGES)
     st.markdown("---")
     model_name = eval_metrics.get('model_name', 'Desconocido') if eval_metrics else 'No disponible'
-    st.info(f"**QA-Cortex v2.0**\n\nModelo: {model_name}\nUnidad 1 y 2\nMaestría en Ciencia de Datos e IA")
+    st.info(f"**QA-Cortex v2.0**\n\nModelo activo: {model_name}\nUnidad 1 y 2\nMaestría en Ciencia de Datos e IA")
 
 if page == "Inicio":
     st.write("""
@@ -120,6 +143,15 @@ if page == "Inicio":
 
 elif page == "Predicción Individual":
     st.header("Análisis de Módulo Individual")
+
+    model_list = list(all_models.keys()) if all_models else [eval_metrics.get('model_name', 'Modelo único')] if eval_metrics else ['Modelo único']
+    selected_model_name = st.selectbox("Seleccionar modelo (TASK-26)", model_list)
+
+    pred_model = all_models.get(selected_model_name) if all_models else main_model
+
+    threshold = st.slider("Umbral de decisión (TASK-25)", min_value=0.0, max_value=1.0, value=0.5, step=0.05,
+                          help="Ajusta la sensibilidad vs especificidad. Menor umbral = detecta más defectos (mayor recall, menor precisión).")
+
     with st.container():
         st.write("Ingrese las métricas técnicas del módulo para obtener un diagnóstico basado en IA.")
         col1, col2 = st.columns(2)
@@ -137,7 +169,7 @@ elif page == "Predicción Individual":
             branches = st.number_input("Branch Count (BRANCH_COUNT)", min_value=0.0, value=8.0)
 
     if st.button("Ejecutar Predicción"):
-        if model and scaler:
+        if pred_model and scaler:
             input_data = pd.DataFrame([[
                 loc, cyclo, length, volume, difficulty,
                 fan_in, fan_out, num_ops, num_opnds, branches
@@ -147,31 +179,34 @@ elif page == "Predicción Individual":
             ])
             try:
                 input_scaled = scaler.transform(input_data)
-                prediction = model.predict(input_scaled)[0]
-                probability = model.predict_proba(input_scaled)[0][1]
+                probability = pred_model.predict_proba(input_scaled)[0][1]
+                prediction = 1 if probability >= threshold else 0
+
                 st.markdown("---")
+                st.write(f"**Modelo:** {selected_model_name}")
+                st.write(f"**Umbral:** {threshold:.2f}")
                 if prediction == 1:
-                    st.error(f"### MODULO DEFECTUOSO DETECTADO")
-                    st.write(f"Existe un **{probability:.1%}** de probabilidad de que este modulo contenga errores criticos.")
+                    st.error(f"### MÓDULO DEFECTUOSO DETECTADO")
+                    st.write(f"Probabilidad: **{probability:.1%}** (umbral {threshold:.2f})")
                     st.progress(probability)
                 else:
-                    st.success(f"### MODULO LIMPIO")
-                    st.write(f"El analisis indica que el modulo es estable (Probabilidad de fallo: **{probability:.1%}**).")
+                    st.success(f"### MÓDULO LIMPIO")
+                    st.write(f"Probabilidad de fallo: **{probability:.1%}** (umbral {threshold:.2f})")
                     st.progress(probability)
             except Exception as e:
-                st.error(f"Error en la transformacion de datos: {e}")
+                st.error(f"Error en la transformación de datos: {e}")
         else:
             st.warning("Modelo no cargado correctamente.")
 
 elif page == "Predicción por Lotes (CSV)":
     st.header("Procesamiento por Lotes")
-    st.write("Suba un archivo CSV para analizar multiples modulos simultaneamente.")
-    uploaded_file = st.file_uploader("Sube tu archivo CSV con metricas de codigo", type=["csv"])
+    st.write("Suba un archivo CSV para analizar múltiples módulos simultáneamente.")
+    uploaded_file = st.file_uploader("Sube tu archivo CSV con métricas de código", type=["csv"])
     if uploaded_file:
         df = pd.read_csv(uploaded_file)
         with st.expander("Vista previa de datos cargados"):
             st.dataframe(df.head(), use_container_width=True)
-        if model and scaler:
+        if main_model and scaler:
             feature_cols = [
                 'LOC', 'CYCLO', 'LENGTH', 'VOLUME', 'DIFFICULTY',
                 'INT_FAN_IN', 'INT_FAN_OUT', 'NUM_OPERATORS', 'NUM_OPERANDS', 'BRANCH_COUNT'
@@ -179,11 +214,11 @@ elif page == "Predicción por Lotes (CSV)":
             if all(col in df.columns for col in feature_cols):
                 X = df[feature_cols]
                 X_scaled = scaler.transform(X)
-                predictions = model.predict(X_scaled)
-                probabilities = model.predict_proba(X_scaled)[:, 1]
+                predictions = main_model.predict(X_scaled)
+                probabilities = main_model.predict_proba(X_scaled)[:, 1]
                 df['Resultado'] = ["Defectuoso" if p == 1 else "Limpio" for p in predictions]
                 df['Probabilidad'] = [f"{prob:.1%}" for prob in probabilities]
-                st.subheader("Resultados del Analisis")
+                st.subheader("Resultados del Análisis")
                 st.dataframe(df, use_container_width=True)
                 csv = df.to_csv(index=False).encode('utf-8')
                 st.download_button("Descargar Reporte Completo", csv, "reporte_qa_defectos.csv", "text/csv")
@@ -191,24 +226,72 @@ elif page == "Predicción por Lotes (CSV)":
                 missing = [c for col in feature_cols if col not in df.columns]
                 st.error(f"El archivo CSV debe contener las columnas: {feature_cols}. Faltan: {missing}")
 
+elif page == "Comparación de Modelos":
+    st.header("Comparación de Modelos (TASK-27)")
+
+    if comparison_df is None or comparison_df.empty:
+        st.warning("Datos de comparación no disponibles. Ejecute el notebook primero.")
+        st.stop()
+
+    st.subheader("Tabla de Métricas por Modelo")
+    styled = comparison_df.style.background_gradient(cmap='viridis', subset=['PR-AUC', 'ROC-AUC', 'F1-Score', 'Recall'])
+    st.dataframe(styled, use_container_width=True)
+
+    if not all_models or not test_data:
+        st.warning("Modelos individuales o datos de test no disponibles.")
+        st.stop()
+
+    X_test, y_test, feat_names = test_data
+    st.subheader("Curvas ROC - Todos los Modelos")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    fig.patch.set_facecolor('none')
+    ax.set_facecolor('none')
+    for name, m in all_models.items():
+        y_proba = m.predict_proba(X_test)[:, 1]
+        fpr, tpr, _ = roc_curve(y_test, y_proba)
+        auc = roc_auc_score(y_test, y_proba)
+        ax.plot(fpr, tpr, lw=2, label=f'{name} (AUC={auc:.3f})')
+    ax.plot([0, 1], [0, 1], 'k--', lw=1, alpha=0.4, label='Aleatorio')
+    ax.set_xlabel('FPR', color='white')
+    ax.set_ylabel('TPR', color='white')
+    ax.set_title('Comparación de Curvas ROC', color='white')
+    ax.tick_params(colors='white')
+    ax.legend()
+    ax.grid(True, alpha=0.2)
+    st.pyplot(fig)
+
+    st.subheader("Curvas Precision-Recall - Todos los Modelos")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    fig.patch.set_facecolor('none')
+    ax.set_facecolor('none')
+    for name, m in all_models.items():
+        y_proba = m.predict_proba(X_test)[:, 1]
+        prec, rec, _ = precision_recall_curve(y_test, y_proba)
+        prauc = average_precision_score(y_test, y_proba)
+        ax.plot(rec, prec, lw=2, label=f'{name} (PR-AUC={prauc:.3f})')
+    ax.set_xlabel('Recall', color='white')
+    ax.set_ylabel('Precision', color='white')
+    ax.set_title('Comparación de Curvas PR', color='white')
+    ax.tick_params(colors='white')
+    ax.legend()
+    ax.grid(True, alpha=0.2)
+    st.pyplot(fig)
+
 elif page == "Análisis del Modelo":
     st.header("Inteligencia del Modelo")
 
     if not all([eval_metrics, feature_imp, test_data]):
-        st.warning("Datos de evaluacion no disponibles. Ejecute el notebook primero para generar los archivos necesarios.")
+        st.warning("Datos de evaluación no disponibles. Ejecute el notebook primero.")
         st.stop()
 
     model_name = eval_metrics['model_name']
-
     st.info(f"**Modelo activo:** {model_name} | Entrenado con SMOTE + class_weight='balanced'")
 
     col1, col2 = st.columns([1, 1])
-
     with col1:
-        st.subheader("Importancia de Caracteristicas")
+        st.subheader("Importancia de Características")
         imp_df = pd.DataFrame(list(feature_imp.items()), columns=['Feature', 'Importance'])
         imp_df = imp_df.sort_values('Importance', ascending=True)
-
         fig, ax = plt.subplots(figsize=(10, 6))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -219,7 +302,7 @@ elif page == "Análisis del Modelo":
         st.pyplot(fig)
 
     with col2:
-        st.subheader("Metricas del Modelo")
+        st.subheader("Métricas del Modelo")
         metrics_df = pd.DataFrame([
             ('Accuracy', f"{eval_metrics['accuracy']:.4f}"),
             ('Precision', f"{eval_metrics['precision']:.4f}"),
@@ -229,22 +312,20 @@ elif page == "Análisis del Modelo":
             ('PR-AUC', f"{eval_metrics['pr_auc']:.4f}"),
             ('MCC', f"{eval_metrics['mcc']:.4f}"),
             ('Log Loss', f"{eval_metrics['log_loss']:.4f}"),
-        ], columns=['Metrica', 'Valor'])
+        ], columns=['Métrica', 'Valor'])
         st.table(metrics_df)
 
     st.markdown("---")
 
-    X_test, y_test, feature_names = test_data
-    y_proba = model.predict_proba(X_test)[:, 1]
-    y_pred = model.predict(X_test)
+    X_test, y_test, _ = test_data
+    y_proba = main_model.predict_proba(X_test)[:, 1]
+    y_pred = main_model.predict(X_test)
 
-    tab1, tab2, tab3 = st.tabs(["Curva ROC", "Matriz de Confusion", "Curva Precision-Recall"])
+    tab1, tab2, tab3 = st.tabs(["Curva ROC", "Matriz de Confusión", "Curva Precision-Recall"])
 
     with tab1:
-        st.subheader("Curva ROC")
         fpr, tpr, _ = roc_curve(y_test, y_proba)
         roc_auc = roc_auc_score(y_test, y_proba)
-
         fig, ax = plt.subplots(figsize=(8, 6))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -259,9 +340,7 @@ elif page == "Análisis del Modelo":
         st.pyplot(fig)
 
     with tab2:
-        st.subheader("Matriz de Confusion")
         cm = confusion_matrix(y_test, y_pred)
-
         fig, ax = plt.subplots(figsize=(8, 6))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -270,18 +349,15 @@ elif page == "Análisis del Modelo":
                     yticklabels=['Limpio', 'Defectuoso'])
         ax.set_xlabel('Predicho', color='white')
         ax.set_ylabel('Real', color='white')
-        ax.set_title('Matriz de Confusion', color='white')
+        ax.set_title('Matriz de Confusión', color='white')
         ax.tick_params(colors='white')
         st.pyplot(fig)
-
         tn, fp, fn, tp = cm.ravel()
         st.write(f"VN: {tn} | FP: {fp} | FN: {fn} | VP: {tp}")
 
     with tab3:
-        st.subheader("Curva Precision-Recall")
         prec, rec, _ = precision_recall_curve(y_test, y_proba)
         pr_auc = average_precision_score(y_test, y_proba)
-
         fig, ax = plt.subplots(figsize=(8, 6))
         fig.patch.set_facecolor('none')
         ax.set_facecolor('none')
@@ -295,9 +371,9 @@ elif page == "Análisis del Modelo":
         st.pyplot(fig)
 
     st.markdown("---")
-    st.subheader("Explicacion de Caracteristicas")
+    st.subheader("Explicación de Características")
     st.write("""
-    - **LOC**: Representa el tamano del modulo. A mayor tamano, mayor probabilidad de error.
-    - **CYCLO**: Mide la complejidad logica. Valores altos indican codigo dificil de testear.
+    - **LOC**: Representa el tamaño del módulo. A mayor tamaño, mayor probabilidad de error.
+    - **CYCLO**: Mide la complejidad lógica. Valores altos indican código difícil de testear.
     - **Halstead Metrics**: Analizan la riqueza del vocabulario y dificultad del algoritmo.
     """)
