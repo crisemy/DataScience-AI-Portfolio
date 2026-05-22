@@ -2,3 +2,6 @@
 .venv/
 /kaggleChessOpenings/LinkedInSummary.txt
 /04.qaDefectPrediction/plan_implementacion.md
+/04.qaDefectPrediction/model/
+/04.qaDefectPrediction/_*.txt
+/04.qaDefectPrediction/_*.py
