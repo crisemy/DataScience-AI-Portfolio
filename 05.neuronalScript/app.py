@@ -8,10 +8,10 @@ from tensorflow.keras import layers
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Neuronal Script - Titanic Survival", layout="wide")
+st.set_page_config(page_title="Script Neuronal - Predicción del Titanic", layout="wide")
 
-st.title("🧠 Neuronal Script - Titanic Survival Prediction")
-st.markdown("Deep Learning model using MLP architecture to predict Titanic survival")
+st.title("🧠 Script Neuronal - Predicción de Supervivencia en el Titanic")
+st.markdown("Modelo de Aprendizaje Profundo usando arquitectura MLP para predecir el supervivencia en el Titanic")
 
 @st.cache_data
 def load_data():
@@ -25,7 +25,7 @@ def load_data():
 def train_model():
     df = load_data()
 
-    # Preprocessing
+    # Preprocesamiento
     df['sex'] = df['sex'].map({'male': 0, 'female': 1})
     df['age'] = df['age'].fillna(df['age'].median())
     df['embarked'] = df['embarked'].fillna(df['embarked'].mode()[0])
@@ -43,12 +43,12 @@ def train_model():
 
     # Build model
     model = keras.Sequential([
-        layers.Input(shape=(9,)),
-        layers.Dense(32, activation='relu'),
+        layers.Input(shape=(9,)),              # 9 características de entrada (actualizado de 7)
+        layers.Dense(32, activation='relu'),   # Capa oculta 1
+        layers.Dropout(0.2),                   # Regularización para evitar overfitting
+        layers.Dense(16, activation='relu'),   # Capa oculta 2
         layers.Dropout(0.2),
-        layers.Dense(16, activation='relu'),
-        layers.Dropout(0.2),
-        layers.Dense(1, activation='sigmoid')
+        layers.Dense(1, activation='sigmoid')  # Salida: probabilidad de sobrevivir
     ])
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
@@ -65,44 +65,44 @@ def train_model():
 
 df = load_data()
 
-st.sidebar.header("Dataset Overview")
-st.sidebar.write(f"Rows: {df.shape[0]}, Columns: {df.shape[1]}")
-st.sidebar.write("Columns:", list(df.columns))
+st.sidebar.header("Resumen del Dataset")
+st.sidebar.write(f"Filas: {df.shape[0]}, Columnas: {df.shape[1]}")
+st.sidebar.write("Columnas:", list(df.columns))
 
-if st.sidebar.button("Train Model"):
-    with st.spinner("Training neural network..."):
+if st.sidebar.button("Entrenar Modelo"):
+    with st.spinner("Entrenando red neuronal..."):
         model, history, test_accuracy, X_test, y_test = train_model()
 
-    st.success(f"Training complete! Test accuracy: **{test_accuracy:.4f}**")
+    st.success(f"¡Entrenamiento completo! Precisión en el test: **{test_accuracy:.4f}**")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Accuracy Evolution")
+        st.subheader("Evolución de la Precisión")
         st.markdown(
-            "*Training (blue)*: Model's performance on the 80% training split, "
-            "showing how well it learns passenger patterns across 30 epochs.\n"
-            "*Validation (orange)*: Model's ability to generalize to unseen data; "
-            "if this curve peaks then declines while training continues improving, "
-            "it indicates overfitting to training specifics."
+            "*Entrenamiento (azul)*: Rendimiento del modelo en la división de entrenamiento del 80%, "
+            "mostrando qué tan bien aprende los patrones de los pasajeros a lo largo de 30 épocas.\n"
+            "*Validación (naranja)*: Capacidad del modelo para generalizar a datos nuevos; "
+            "si esta curva alcanza un máximo y luego disminuye mientras el entrenamiento continúa mejorando, "
+            "indica overfitting (sobreajuste) a los detalles específicos del entrenamiento."
         )
         fig1 = go.Figure()
         fig1.add_trace(go.Scatter(
             y=history.history['accuracy'],
             mode='lines+markers',
-            name='Training',
+            name='Entrenamiento',
             line=dict(color='blue')
         ))
         fig1.add_trace(go.Scatter(
             y=history.history['val_accuracy'],
             mode='lines+markers',
-            name='Validation',
+            name='Validación',
             line=dict(color='orange')
         ))
         fig1.update_layout(
-            title='Accuracy',
-            xaxis_title='Epochs',
-            yaxis_title='Accuracy',
+            title='Precisión',
+            xaxis_title='Épocas',
+            yaxis_title='Precisión',
             hovermode='x unified',
             template='streamlit',
             width=600,
@@ -111,30 +111,29 @@ if st.sidebar.button("Train Model"):
         st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
-        st.subheader("Loss Evolution")
+        st.subheader("Evolución de la Pérdida")
         st.markdown(
-            "*Training (blue)*: Decreasing binary crossentropy error as the model "
-            "minimizes the difference between predicted survival probabilities and actual outcomes.\n"
-            "*Validation (orange)*: Critical generalization metric; if it rises while "
-            "training loss continues falling, the model is memorizing noise rather than "
-            "learning meaningful patterns for new passenger data."
+            "*Entrenamiento (azul)*: Error decreciente de binary crossentropy mientras el modelo "
+            "minimiza la diferencia entre las probabilidades predichas de supervivencia y los resultados reales.\n"
+            "*Validación (naranja)*: Métrica crítica de generalización; si aumenta mientras la pérdida de entrenamiento continúa disminuyendo, "
+            "el modelo está memorizando ruido en lugar de aprender patrones significativos para nuevos datos de pasajeros."
         )
         fig2 = go.Figure()
         fig2.add_trace(go.Scatter(
             y=history.history['loss'],
             mode='lines+markers',
-            name='Training',
+            name='Entrenamiento',
             line=dict(color='blue')
         ))
         fig2.add_trace(go.Scatter(
             y=history.history['val_loss'],
             mode='lines+markers',
-            name='Validation',
+            name='Validación',
             line=dict(color='orange')
         ))
         fig2.update_layout(
-            title='Loss',
-            xaxis_title='Epochs',
+            title='Pérdida',
+            xaxis_title='Épocas',
             yaxis_title='Loss',
             hovermode='x unified',
             template='streamlit',
@@ -143,21 +142,21 @@ if st.sidebar.button("Train Model"):
         )
         st.plotly_chart(fig2, use_container_width=True)
 
-    st.subheader("Sample Predictions")
+    st.subheader("Predicciones de Muestra")
     predictions = model.predict(X_test[:30]).flatten()
     
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("**Predicted Survivors** (>0.5)")
+        st.markdown("**Sobrevivientes Predichos** (>0.5)")
         for i, pred in enumerate(predictions[:15]):
             if pred > 0.5:
-                st.write(f"Passenger {i+1}: {pred:.4f} -> Sobrevivió")
+                st.write(f"Pasajero {i+1}: {pred:.4f} -> Sobrevivió")
     
     with col2:
-        st.markdown("**Predicted Non-Survivors** (<=0.5)")
+        st.markdown("**No Sobrevivientes Predichos** (<=0.5)")
         for i, pred in enumerate(predictions[15:30]):
             if pred <= 0.5:
-                st.write(f"Passenger {i+16}: {pred:.4f} -> No sobrevivió")
+                st.write(f"Pasajero {i+16}: {pred:.4f} -> No sobrevivió")
 
 else:
-    st.info("Click 'Train Model' in the sidebar to start the analysis")
+    st.info("Haz clic en 'Entrenar Modelo' en la barra lateral para comenzar el análisis")

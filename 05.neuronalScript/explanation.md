@@ -11,7 +11,7 @@ El notebook comienza importando las librerías necesarias:
 - `numpy as np`: Para operaciones numéricas y manipulación de arrays
 - `tensorflow as tf`: El framework de deep learning
 - `from tensorflow import keras`: API de alto nivel para construir redes neuronales
-- `from tensorflow.keras import capas`: Capas de Keras para la arquitectura del modelo
+- `from tensorflow.keras import layers`: Capas de Keras para la arquitectura del modelo
 - `matplotlib.pyplot as plt`: Para visualizar los resultados del entrenamiento
 - `pandas as pd`: Para manipulación de datos y carga de CSV
 - `from sklearn.model_selection import train_test_split`: Para dividir los conjuntos de datos en entrenamiento y prueba
