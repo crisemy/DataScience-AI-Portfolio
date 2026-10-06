@@ -4,7 +4,7 @@ Clasificación de defectos en productos industriales con CNN sobre MVTec-AD (cat
 
 ## Dataset: qué y dónde
 
-* **Fuente:** mirror `foersben/mvtec-ad` en Hugging Face (espejo del [MVTec AD original](https://www.mvtec.com/company/research/datasets/mvtec-ad), licencia CC BY-NC-SA 4.0, solo uso no comercial).
+* **Fuente:** mirror `foersben/mvtec-ad` en Hugging Face (espejo del [MVTec AD original](https://www.mvtec.com/research-teaching/datasets/mvtec-ad), licencia CC BY-NC-SA 4.0, solo uso no comercial).
 * **Recorte usado:** solo la categoría `capsule` (~387 MB, 462 archivos) en vez del dataset completo (~7 GB).
 * **Ubicación local (no versionada en git):**
   `06.neuronalIntegrationActivity/datasets/mvtec-ad/capsule/`
@@ -37,3 +37,12 @@ hf download foersben/mvtec-ad --repo-type dataset \
 ```
 
 > Nota: el comando genera una carpeta temporal `.cache/huggingface/` dentro de `--local-dir`; se puede borrar tras la descarga. La carpeta `datasets/` no se commitea (ver `.gitignore`).
+
+## Atribución
+
+Dataset original MVTec AD: <https://www.mvtec.com/research-teaching/datasets/mvtec-ad>
+
+Si usás estos datos en trabajo científico, citá a sus creadores:
+
+* Paul Bergmann, Michael Fauser, David Sattlegger, Carsten Steger: *MVTec AD — A Comprehensive Real-World Dataset for Unsupervised Anomaly Detection*. IEEE/CVF CVPR, 9584–9592, 2019.
+* Paul Bergmann, Kilian Batzner, Michael Fauser, David Sattlegger, Carsten Steger: *The MVTec Anomaly Detection Dataset: A Comprehensive Real-World Dataset for Unsupervised Anomaly Detection*. IJCV 129(4):1038–1059, 2021.
