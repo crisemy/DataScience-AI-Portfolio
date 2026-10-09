@@ -43,15 +43,32 @@ Además de `accuracy/loss` y sus curvas se reportan matriz de confusión y `prec
 
 ## 5. Resultados obtenidos
 
-> Pendiente de ejecución del notebook (requiere `requirements.txt` + descarga de pesos ImageNet, ~528 MB). Pegar aquí la tabla de §8:
+Resultados sobre el mismo split de test estratificado (71 imágenes: 49 buenas / 22 defectuosas), extraídos de §8 del notebook (`actividad_integradora.ipynb`, celdas 13/18/21/23). Precisión/recall/F1 corresponden a la clase positiva `defectuosa (1)` (average binario):
 
-| Enfoque | acc | precision | recall | f1 |
+| Enfoque | loss (test) | acc | precision | recall | f1 |
+
+|---|---|---|---|---|---|
+| CNN desde cero | 0.6216 | 0.6901 | 0.0000 | 0.0000 | 0.0000 |
+| TL congelado (VGG16) | 0.4113 | 0.8028 | 0.7222 | 0.5909 | 0.6500 |
+| FT bloque5 (`Adam(1e-5)`) | 0.3585 | 0.8310 | 0.7273 | 0.7273 | 0.7273 |
+
+Matrices de confusión (filas = real, columnas = predicho; orden `[good, defectuosa]`):
+
+| Enfoque | TN (good→good) | FP (good→def.) | FN (def.→good) | TP (def.→def.) |
 
 |---|---|---|---|---|
-| CNN desde cero | — | — | — | — |
-| TL congelado | — | — | — | — |
-| FT bloque5 | — | — | — | — |
+| CNN desde cero | 49 | 0 | 22 | 0 |
+| TL congelado | 44 | 5 | 9 | 13 |
+| FT bloque5 | 43 | 6 | 6 | 16 |
+
+Lectura:
+
+- **CNN:** colapsa a la clase mayoritaria — predice todo `good`. El accuracy (0.69) replica la proporción de buenas en test (49/71 ≈ 0.69) y es inútil para inspección: recall 0% de defectos. El entrenamiento lo anticipa: `val_accuracy` queda clavada en 0.8036 desde la epoch 1 y `EarlyStopping` corta en la epoch 6.
+- **TL:** el salto cualitativo. Con solo el cabezal entrenado (410.691 params. entrenables vs. 14.714.688 congelados) pasa a F1 = 0.65 en defectos; el mejor `val_accuracy` (0.8750, epoch 4) corta en epoch 9. Quedan 9 falsos negativos: ese es el costo operativo crítico.
+- **FT:** liberar solo `block5_conv1/2/3` con LR 1e-5 baja el loss de 0.41 a 0.36 y sube el recall de 0.5909 a 0.7273 (+13.6 pp, 3 defectos más atrapados: FN 9→6) a costa de 1 falso positivo extra (5→6). F1 0.65→0.73.
 
 ## 6. Conclusiones
 
-> A completar tras la ejecución, respondiendo: ¿cuánto ganó el TL sobre la CNN con tan pocos datos? ¿aportó algo el FT? ¿Qué errores quedan (ver matrices de confusión de §5–§7)?
+1. **¿Cuánto ganó el TL sobre la CNN con tan pocos datos?** Todo: de un clasificador constante inútil (F1 = 0) a F1 = 0.65 y +11 pp de accuracy, sin agregar datos. Con 280 imágenes de entrenamiento, reutilizar los filtros de ImageNet (bordes, texturas, contrastes) gana por lejos a aprenderlos desde cero — igual que en el ejemplo del profesor (flores: 0.82→0.99).
+2. **¿Aportó algo el FT?** Sí, y donde más importa: el recall de defectos sube de 0.59 a 0.73. El ajuste fino con LR bajo especializa los filtros de alto nivel a la geometría de la cápsula sin destruir el conocimiento previo (sin "amnesia catastrófica"). La mejora en accuracy (+2.8 pp) es modesta; la mejora en sensibilidad es la que justifica el FT.
+3. **¿Qué errores quedan?** El mejor modelo (FT) todavía deja pasar 6 de 22 defectos (27%) y descarta 6 de 49 buenas (12%). Para una línea farmacéutica, un recall de 0.73 sigue siendo insuficiente como único filtro: serviría como pre-screening con revisión humana de los positivos, o requeriría más datos, aumento de datos, umbral < 0.5 (priorizar recall), o ponderación de clases. Métrica rectora a futuro: recall/F1 de `defectuosa`, no accuracy global.
