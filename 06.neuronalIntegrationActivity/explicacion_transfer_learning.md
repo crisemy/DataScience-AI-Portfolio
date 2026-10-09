@@ -5,6 +5,7 @@
 ## 0. Vocabulario mínimo (sin esto no se entiende nada)
 
 | Palabra | Qué es, en criollo |
+
 |---|---|
 | Red neuronal | Una receta con muchos "botones" (pesos) que se ajustan solos probando y corrigiendo. |
 | Imagen para la compu | Una tabla gigante de números (cada píxel = 3 números: rojo, verde, azul). |
@@ -47,6 +48,7 @@
 ## 4. La moraleja (lo que el profesor quiere que veas)
 
 | | Camino A (Transfer Learning) | Camino B (desde cero) |
+
 |---|---|---|
 | Punto de partida | Cerebro experto (ImageNet) | Cerebro bebé (azar) |
 | Qué aprende | Solo la cabeza nueva | Todo |

@@ -5,6 +5,7 @@
 ## 0. Qué cambia respecto del ejemplo (y por qué)
 
 | | Ejemplo del profesor | Nuestra actividad |
+
 |---|---|---|
 | Fotos | Flores (5 clases) | Cápsulas MVTec-AD (2 clases: buena/defectuosa) |
 | Origen de datos | Internet (`tfds`) | Disco local o Colab (`datasets/mvtec-ad/capsule/`) |
